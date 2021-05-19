@@ -15,6 +15,8 @@ passport_keys = {
 
 optional_keys = ['cid']
 year_keys = ['byr', 'iyr', 'eyr']
+hex = '0123456789abcdef'
+valid_ecl = 'amb blu brn gry grn hzl oth'.split()
 
 limits = {
     'byr': (1920, 2002),
@@ -39,12 +41,11 @@ def is_strictly_valid_passport(passport: dict, requirement = required_passport_k
     if any(not passport[key].isnumeric() for key in year_keys):
         return False
     
-    byr, iyr, eyr = (int(passport[key]) for key in year_keys)
-    if any((
-        byr < 1920, byr > 2002,
-        iyr < 2010, iyr > 2020,
-        eyr < 2020, eyr > 2030
-        )):
+    if any(
+        not within_limits(
+            int(passport[key]),
+            *limits[key]
+        ) for key in year_keys):
         return False
 
     hgt = passport['hgt']
@@ -52,8 +53,24 @@ def is_strictly_valid_passport(passport: dict, requirement = required_passport_k
         return False
     
     hgt_val, hgt_unit = int(hgt[:-2]), hgt[-2:]
+    if not within_limits(hgt_val, *limits['hgt'][hgt_unit]):
+        return False
     
+    hcl = passport['hcl']
+    if hcl[0] != '#' or any(ch.lower() not in hex for ch in hcl[1:]):
+        return False
+
+    if passport['ecl'] not in valid_ecl:
+        return False
+
+    pid = passport['pid']
+    if not pid.isnumeric() or len(pid) != 9:
+        return False
+
     return True 
+
+def within_limits(x, a, b):
+    return not(x < a or x > b)
 
 def read_passports(filename):
     with open(filename) as f:
@@ -68,3 +85,7 @@ if __name__ == '__main__':
     valid_passports = [passport for passport in passports if is_strictly_valid_passport(passport)]
     # print(*valid_passports, sep='\n')
     print(f'Count: {len(valid_passports)}')
+
+    assert within_limits(1,1,1)
+    assert within_limits(1,2,1) == False
+    assert within_limits(1,0,1)
