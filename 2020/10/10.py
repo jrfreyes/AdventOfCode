@@ -17,21 +17,6 @@ def use_all(adapters):
 
     return jolt_diffs
 
-# extremely inefficient
-@cache
-def count_combinations(adapters, curr_jolt_rating = 0):
-    adapters = sorted(adapters)
-    combinations = 0
-    if len(adapters) == 1:
-        return 1
-    
-    for j in range(curr_jolt_rating + 1, curr_jolt_rating + 4):
-        if j in adapters:
-            i = adapters.index(j)
-            combinations += count_combinations(adapters[i:], j)
-
-    return combinations    
-
 class CombinationTree:
     def __init__(self, adapters):
         self.children = {}
@@ -42,7 +27,7 @@ class CombinationTree:
                 if j in adapters:
                     self.children[jolt].append(j)
 
-    @cache
+    @cache # learned about functools thanks to 0xdf https://0xdf.gitlab.io/adventofcode2020/10
     def count_combinations(self, jolt = 0):
         if len(self.children[jolt]) == 0:
             return 1
